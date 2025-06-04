@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Multiplayer de Forca</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+
+        .game-header {
+            margin-bottom: 30px;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            color: #4a5568;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #718096;
+        }
+
+        .login-section, .game-section {
+            display: none;
+        }
+
+        .login-section.active, .game-section.active {
+            display: block;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        input[type="text"] {
+            padding: 12px 20px;
+            font-size: 1.1em;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            width: 250px;
+            margin: 0 10px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #cbd5e0;
+        }
+
+        .hangman-display {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: pre-line;
+        }
+
+        .word-display {
+            font-size: 2em;
+            font-weight: bold;
+            letter-spacing: 10px;
+            margin: 20px 0;
+            color: #4a5568;
+            font-family: 'Courier New', monospace;
+        }
+
+        .alphabet {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .letter-btn {
+            padding: 10px;
+            font-size: 1.1em;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .letter-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .letter-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        .letter-btn.correct {
+            background: #48bb78 !important;
+            color: white !important;
+            border-color: #48bb78 !important;
+        }
+
+        .letter-btn.incorrect {
+            background: #f56565 !important;
+            color: white !important;
+            border-color: #f56565 !important;
+        }
+
+        .players-list {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .player-item:last-child {
+            border-bottom: none;
+        }
+
+        .player-name {
+            font-weight: bold;
+        }
+
+        .player-name.current {
+            color: #667eea;
+        }
+
+        .player-score {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .player-status {
+            font-size: 0.8em;
+            color: #718096;
+        }
+
+        .game-messages {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            max-height: 150px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .message {
+            padding: 5px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9em;
+        }
+
+        .message:last-child {
+            border-bottom: none;
+        }
+
+        .message-time {
+            color: #718096;
+            font-size: 0.8em;
+        }
+
+        .status-message {
+            background: #e6fffa;
+            color: #285e61;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #4fd1c7;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #f56565;
+        }
+
+        .connection-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .connected {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .disconnected {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .connecting {
+            background: #fef5e7;
+            color: #744210;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .game-over {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .game-won {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .game-title {
+                font-size: 2em;
+            }
+            
+            .word-display {
+                font-size: 1.5em;
+                letter-spacing: 5px;
+            }
+            
+            .alphabet {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .game-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="connection-status disconnected" id="connectionStatus">
+            Desconectado
+        </div>
+
+        <!-- Seção de Login -->
+        <div class="login-section active" id="loginSection">
+            <div class="game-header">
+                <h1 class="game-title">Forca Multiplayer</h1>
+                <p>Entre com seu nome para começar a jogar!</p>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="playerName" placeholder="Digite seu nome" maxlength="15" onkeypress="handleEnterKey(event)">
+                <button class="btn btn-primary" id="joinButton" onclick="joinGame()">
+                    Entrar no Jogo
+                </button>
+            </div>
+        </div>
+
+        <!-- Seção do Jogo -->
+        <div class="game-section" id="gameSection">
+            <div class="game-header">
+                <h1 class="game-title">Forca Multiplayer</h1>
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="playersCount">0</div>
+                        <div class="stat-label">Jogadores</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="roundNumber">1</div>
+                        <div class="stat-label">Rodada</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="wrongGuesses">0</div>
+                        <div class="stat-label">Erros</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hangman-display" id="hangmanDisplay">
+                <pre id="hangmanArt">    +---+
+    |   |
+        |
+        |
+        |
+        |
+  =========</pre>
+            </div>
+
+            <div class="word-display" id="wordDisplay">_ _ _ _ _</div>
+
+            <div class="alphabet" id="alphabet">
+                
+            </div>
+
+            <div class="players-list">
+                <h3>Jogadores Online:</h3>
+                <div id="playersList">
+                    
+                </div>
+            </div>
+
+            <div class="game-messages" id="gameMessages">
+               
+            </div>
+
+            <div class="input-group">
+                <button class="btn btn-secondary" onclick="startNewGame()">
+                    Nova Palavra
+                </button>
+                <button class="btn btn-secondary" onclick="disconnect()">
+                    Sair do Jogo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class HangmanClient {
+            constructor() {
+                this.ws = null;
+                this.playerName = '';
+                this.isConnected = false;
+                this.gameState = {};
+                this.hangmanParts = [
+                    `    +---+
+    |   |
+        |
+        |
+        |
+        |
+  =========`,
+                    `    +---+
+    |   |
+    O   |
+        |
+        |
+        |
+  =========`,
+                    `    +---+
+    |   |
+    O   |
+    |   |
+        |
+        |
+  =========`,
+                    `    +---+
+    |   |
+    O   |
+   /|   |
+        |
+        |
+  =========`,
+                    `    +---+
+    |   |
+    O   |
+   /|\\  |
+        |
+        |
+  =========`,
+                    `    +---+
+    |   |
+    O   |
+   /|\\  |
+   /    |
+        |
+  =========`,
+                    `    +---+
+    |   |
+    O   |
+   /|\\  |
+   / \\  |
+        |
+  =========`
+                ];
+                
+                this.init();
+            }
+
+            init() {
+                this.createAlphabet();
+                this.updateConnectionStatus('Desconectado', 'disconnected');
+            }
+
+            connect() {
+                try {
+                   
+                    const wsUrl = 'ws://localhost:8080';
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.updateConnectionStatus('Conectando...', 'connecting');
+
+                    this.ws.onopen = () => {
+                        console.log('Conectado ao servidor WebSocket');
+                        this.isConnected = true;
+                        this.updateConnectionStatus('Conectado', 'connected');
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleMessage(data);
+                        } catch (error) {
+                            console.error('Erro ao processar mensagem:', error);
+                        }
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log('Conexão WebSocket fechada');
+                        this.isConnected = false;
+                        this.updateConnectionStatus('Desconectado', 'disconnected');
+                        
+                      
+                        setTimeout(() => {
+                            if (!this.isConnected) {
+                                this.addMessage('Tentando reconectar...');
+                                this.connect();
+                            }
+                        }, 3000);
+                    };
+
+                    this.ws.onerror = (error) => {
+                        console.error('Erro WebSocket:', error);
+                        this.updateConnectionStatus('Erro de Conexão', 'disconnected');
+                        this.showError('Erro ao conectar com o servidor. Verifique se o servidor está rodando.');
+                    };
+
+                } catch (error) {
+                    console.error('Erro ao tentar conectar:', error);
+                    this.showError('Não foi possível conectar ao servidor.');
+                }
+            }
+
+            handleMessage(data) {
+                switch (data.type) {
+                    case 'gameState':
+                        this.updateGameState(data.gameState);
+                        break;
+                    case 'message':
+                        this.addMessage(data.message, data.timestamp);
+                        break;
+                    case 'error':
+                        this.showError(data.message);
+                        break;
+                    case 'playerJoined':
+                    case 'playerLeft':
+                        this.updatePlayersList(data.players);
+                        break;
+                    case 'pong':
+                       
+                        break;
+                    default:
+                        console.log('Mensagem não reconhecida:', data);
+                }
+            }
+
+            send(data) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(data));
+                } else {
+                    this.showError('Não conectado ao servidor');
+                }
+            }
+
+            joinGame() {
+                const name = document.getElementById('playerName').value.trim();
+                
+                if (!name) {
+                    this.showError('Por favor, digite seu nome');
+                    return;
+                }
+
+                if (name.length > 15) {
+                    this.showError('Nome muito longo! Máximo 15 caracteres.');
+                    return;
+                }
+
+                this.playerName = name;
+                
+                if (!this.isConnected) {
+                    this.connect();
+                    
+                   
+                    const checkConnection = () => {
+                        if (this.isConnected) {
+                            this.send({
+                                type: 'join',
+                                playerName: this.playerName
+                            });
+                        } else {
+                            setTimeout(checkConnection, 100);
+                        }
+                    };
+                    
+                    setTimeout(checkConnection, 500);
+                } else {
+                    this.send({
+                        type: 'join',
+                        playerName: this.playerName
+                    });
+                }
+            }
+
+            guessLetter(letter) {
+                if (!this.isConnected) {
+                    this.showError('Não conectado ao servidor');
+                    return;
+                }
+
+                this.send({
+                    type: 'guess',
+                    letter: letter
+                });
+            }
+
+            startNewGame() {
+                if (!this.isConnected) {
+                    this.showError('Não conectado ao servidor');
+                    return;
+                }
+
+                this.send({
+                    type: 'newGame'
+                });
+            }
+
+            updateGameState(gameState) {
+                this.gameState = gameState;
+                
+              
+                document.getElementById('playersCount').textContent = gameState.playersCount || 0;
+                document.getElementById('roundNumber').textContent = gameState.currentRound || 1;
+                document.getElementById('wrongGuesses').textContent = `${gameState.wrongGuesses}/${gameState.maxWrongGuesses}`;
+                
+            
+                if (gameState.guessedWord) {
+                    document.getElementById('wordDisplay').textContent = gameState.guessedWord.split('').join(' ');
+                }
+                
+                
+                this.updateHangmanDisplay(gameState.wrongGuesses);
+                
+               
+                this.updateAlphabet(gameState.guessedLetters, gameState.guessedWord);
+                
+               
+                if (gameState.players) {
+                    this.updatePlayersList(gameState.players);
+                }
+                
+                
+                if (gameState.gameOver) {
+                    if (gameState.isWon) {
+                        this.showGameResult('🎉 Parabéns! Palavra descoberta!', 'game-won');
+                    } else {
+                        this.showGameResult('💀 Game Over!', 'game-over');
+                    }
+                }
+                
+              
+                this.showGameSection();
+            }
+
+            updateHangmanDisplay(wrongGuesses) {
+                const hangmanArt = document.getElementById('hangmanArt');
+                if (wrongGuesses >= 0 && wrongGuesses < this.hangmanParts.length) {
+                    hangmanArt.textContent = this.hangmanParts[wrongGuesses];
+                }
+            }
+
+            createAlphabet() {
+                const alphabet = document.getElementById('alphabet');
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                
+                alphabet.innerHTML = '';
+                
+                for (let letter of letters) {
+                    const button = document.createElement('button');
+                    button.className = 'letter-btn';
+                    button.textContent = letter;
+                    button.onclick = () => this.guessLetter(letter);
+                    button.id = `btn-${letter}`;
+                    alphabet.appendChild(button);
+                }
+            }
+
+            updateAlphabet(guessedLetters, guessedWord) {
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                
+                for (let letter of letters) {
+                    const button = document.getElementById(`btn-${letter}`);
+                    if (button) {
+                        if (guessedLetters && guessedLetters.includes(letter)) {
+                            button.disabled = true;
+                            
+                         
+                            if (guessedWord && this.gameState.word && this.gameState.word.includes(letter)) {
+                                button.classList.add('correct');
+                                button.classList.remove('incorrect');
+                            } else {
+                                button.classList.add('incorrect');
+                                button.classList.remove('correct');
+                            }
+                        } else {
+                            button.disabled = false;
+                            button.classList.remove('correct', 'incorrect');
+                        }
+                    }
+                }
+            }
+
+            updatePlayersList(players) {
+                const playersList = document.getElementById('playersList');
+                playersList.innerHTML = '';
+                
+                if (!players || Object.keys(players).length === 0) {
+                    playersList.innerHTML = '<div class="player-item">Nenhum jogador online</div>';
+                    return;
+                }
+                
+
+                const sortedPlayers = Object.values(players)
+                    .filter(player => player.isOnline)
+                    .sort((a, b) => b.score - a.score);
+                
+                sortedPlayers.forEach(player => {
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'player-item';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'player-name';
+                    if (player.name === this.playerName) {
+                        nameSpan.classList.add('current');
+                    }
+                    nameSpan.textContent = player.name;
+                    
+                    const scoreSpan = document.createElement('span');
+                    scoreSpan.className = 'player-score';
+                    scoreSpan.textContent = `${player.score} pts`;
+                    
+                    playerDiv.appendChild(nameSpan);
+                    playerDiv.appendChild(scoreSpan);
+                    playersList.appendChild(playerDiv);
+                });
+            }
+
+            addMessage(message, timestamp) {
+                const messagesDiv = document.getElementById('gameMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                
+                let timeStr = '';
+                if (timestamp) {
+                    const time = new Date(timestamp);
+                    timeStr = `[${time.toLocaleTimeString()}] `;
+                }
+                
+                messageDiv.innerHTML = `<span class="message-time">${timeStr}</span>${message}`;
+                
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                
+              
+                while (messagesDiv.children.length > 50) {
+                    messagesDiv.removeChild(messagesDiv.firstChild);
+                }
+            }
+
+            showError(message) {
+               
+                const existingErrors = document.querySelectorAll('.error-message');
+                existingErrors.forEach(error => error.remove());
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                
+                const container = document.querySelector('.game-container');
+                container.appendChild(errorDiv);
+                
+                
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 5000);
+            }
+
+            showGameResult(message, className) {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = className;
+                resultDiv.textContent = message;
+                
+                const gameSection = document.getElementById('gameSection');
+                gameSection.insertBefore(resultDiv, gameSection.firstChild);
+                
+                
+                setTimeout(() => {
+                    if (resultDiv.parentNode) {
+                        resultDiv.parentNode.removeChild(resultDiv);
+                    }
+                }, 3000);
+            }
+
+            updateConnectionStatus(text, className) {
+                const statusElement = document.getElementById('connectionStatus');
+                statusElement.textContent = text;
+                statusElement.className = `connection-status ${className}`;
+            }
+
+            showGameSection() {
+                document.getElementById('loginSection').classList.remove('active');
+                document.getElementById('gameSection').classList.add('active');
+            }
+
+            showLoginSection() {
+                document.getElementById('gameSection').classList.remove('active');
+                document.getElementById('loginSection').classList.add('active');
+            }
+
+            disconnect() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+                this.isConnected = false;
+                this.playerName = '';
+                this.showLoginSection();
+                this.updateConnectionStatus('Desconectado', 'disconnected');
+            }
+        }
+
+       
+        let gameClient;
+
+     
+        function joinGame() {
+            if (!gameClient) {
+                gameClient = new HangmanClient();
+            }
+            gameClient.joinGame();
+        }
+
+        function startNewGame() {
+            if (gameClient) {
+                gameClient.startNewGame();
+            }
+        }
+
+        function disconnect() {
+            if (gameClient) {
+                gameClient.disconnect();
+            }
+        }
+
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                joinGame();
+            }
+        }
+
+      
+        document.addEventListener('DOMContentLoaded', () => {
+            gameClient = new HangmanClient();
+        });
+
+     
+        setInterval(() => {
+            if (gameClient && gameClient.isConnected) {
+                gameClient.send({ type: 'ping' });
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
