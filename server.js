@@ -103,8 +103,8 @@ class HangmanServer {
         });
 
         server.listen(this.port, () => {
-            console.log(`🚀 Servidor rodando em http://localhost:${this.port}`);
-            console.log(`📡 WebSocket disponível em ws://localhost:${this.port}`);
+            console.log(`Servidor rodando em http://localhost:${this.port}`);
+            console.log(`WebSocket disponível em ws://localhost:${this.port}`);
         });
     }
 
